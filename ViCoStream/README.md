@@ -33,13 +33,17 @@ Existing acceleration methods often optimize individual modules such as visual e
   <img src="assets/streaming_pipeline_100fps.gif" alt="ViCoStream streaming pipeline" width="75%">
 </p>
 
-The pipeline contains three main components:
+The pipeline contains four main components:
 
-- **Chunk-wise prefill.** Incoming frames are grouped into chunks and prefetched incrementally, avoiding repeated processing of old frames.
-- **Intra-chunk visual compression.** Redundant visual tokens inside each chunk are dropped before they enter the rolling memory.
-- **Query-aware retrieval.** When a question arrives, the user query can retrieve a compact set of past visual tokens from the stream history.
+- **Streaming vision preprocessing.** Incoming video frames are continuously decoded, resized, normalized, and organized into streaming chunks before entering the visual encoder in an independent CUDA stream. This stage prepares visual inputs in an online manner and can be overlapped with subsequent visual encoding and LLM inference.
 
-Together, these stages allow ViCoStream to keep up with high-throughput video input while preserving the ability to answer timestamped questions.
+- **Chunk-wise prefill.** Incoming frames are grouped into chunks and incrementally prefetched into the VideoLLM, avoiding repeated processing of historical frames while maintaining bounded per-chunk computation.
+
+- **Intra-chunk visual compression.** Redundant visual tokens within each chunk are identified and dropped before entering the rolling visual memory, reducing the token growth during long-term streaming.
+
+- **Query-aware retrieval.** When a user query arrives, ViCoStream retrieves a compact set of relevant historical visual tokens from the streaming memory, enabling efficient query-time reasoning over long video contexts.
+
+Together, these stages coordinate the entire streaming VideoLLM pipeline from visual input preparation to query-time reasoning, allowing ViCoStream to sustain high-throughput video ingestion while preserving low-latency responses over long video streams.
 
 ## 3. Streaming Paradigms
 
